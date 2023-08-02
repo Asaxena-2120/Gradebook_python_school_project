@@ -239,3 +239,5 @@ Happy coding!
 
 - cd lib/db => alembic revision --autogenerate -m "Adding database"
 - alembic upgrade head
+
+https://dbdiagram.io/d/6480cb90722eb77494949dbb

@@ -8,6 +8,15 @@ import ipdb
 class CLI:
     all_users = set()
     
+
+    def display_menu(self):
+        print()
+        print("1. Add Course")
+        print("2. Add Student")
+        print("3. Add Grade")
+        print("4. View information for a student enter the student's information: ")
+        print("0. Exit")
+        print()
     
     def __init__(self):
         self.students = session.query(Student).all() #returns list
@@ -22,87 +31,88 @@ class CLI:
         self.everything = {} # Only used by Instructors
         self.course_info = {}
         self.start()
+
+    def process_choice_for_teachers(self,choice):
+        if choice == '1':
+            name = input("Enter the name of the course: ")
+            self.add_course(name)
+            
+        elif choice == '2':
+            name = input("Enter the full name of the student: ")
+            self.add_student(name)
+        elif choice == '3':
+            course_id = int(input("Enter the course ID: "))
+            student_id = int(input("Enter the student ID: "))
+            score = int(input("Enter the score: "))
+            self.add_grade(course_id, student_id, score)
+        elif choice == '4':
+            name = (input("Enter the name of the student: "))
+            student_id = int(input("Enter the student ID: "))
+            self.view_student(name, student_id)
+        elif choice == '0':
+            print("Exiting the CLI.")
+            return False
+        else:
+            print("Invalid choice. Try again.")
+        return True
+    
+    def menu_for_teachers(self):
+        while True:
+            self.display_menu()
+            choice = input("Enter your choice (0-3): ")
+            if not self.process_choice_for_teachers(choice):
+                break
+
+    
     
     def start(self):
         print("!!!!!!WELCOME TO GRADEBOOK!!!!!!")
         print()
 
-        # Creating course dictionary
-        for course in self.courses:  
-            self.course_info[course.name.lower()]= []
-        
+        #Check if the user is an instructor or student
+        self.user_name = input("Please enter your name: ")
+        password = (input("Please enter your password: ")).upper()
+        print()
 
-        #making a global dictionary: self.everything
-        
-        
-        for student in self.students:
-            
-            self.everything[student.name.lower()]=[]
-            
-            for grade in student.grades:
-                self.everything[student.name.lower()].append((grade.course_name,grade.score))
-                self.course_info[grade.course_name.lower()].append(grade.score)
-                
-        
+        if password in self.user_validate.values():
 
-        # print(f'everything: {self.everything}')
-        # print(f'course info: {self.course_info}')
-        
-       
+            if password == self.user_validate["teacher_code"]:
+                print(f'Hello Instructor {self.user_name}')
+                self.menu_for_teachers()
 
-        self.user_name = input("Name: ")
-        validation_code = input("Enter Code: ")
-        CLI.all_users.add(self.user_name.lower())
-        print(f'all users : {CLI.all_users}')
-        
-        # INSTRUCTOR CODE
-        if validation_code.lower() == self.user_validate["teacher_code"].lower():
-            print(f"Welcome Instructor {self.user_name}!")
-            print()
-            #show all students names
-            
-            j=[]
-            for student in self.everything.keys():
-               
-                for k in self.everything[student]:
-                    j.append([student,k])
-                
-            print(tabulate(j,headers=["Student Name","Student Report"], tablefmt="pipe"))
-            print()
-            
-            choice = input('''1. Name to check details of particular student - 'Name'\n2. Info About particular Course.\n3. return to main menu - 'menu'\n4. exit application - 'exit'\n''')
-            if choice == 'exit':
-                quit()
-            elif choice.lower() in self.everything:
-                print(self.everything[choice])
-
-            # to get details about course, avg_score, total score, total students
-            elif choice.lower() in self.course_info:
-                # print(self.course_info)
-                print(f'Average Score in {choice} is {sum(self.course_info[choice.lower()])/len(self.course_info[choice.lower()])}')
-                print(f'Maximum Score in {choice} is {max(self.course_info[choice.lower()])}')
-                print(f'Minimum Score in {choice} is {min(self.course_info[choice.lower()])}')
-
-
-        # STUDENT CODE
-        elif validation_code.lower() == self.user_validate["student_code"].lower():
-            print(f"Welcome Student {self.user_name}!")
-            self.search_student_records()
+            if password == self.user_validate["student_code"]:
+                print(f'Hello Student {self.user_name}')
         else:
-            print("Sorry! No such user exists with this Name and code!!! Try Again!")
-        quit()
+            print("Incorrect username or password!!! Please try again!")
+            print("Exiting the CLI.")
+            print()
+            quit()
+
+
+    def view_student(self,name,id):
+        # check if name and id matches for student, if yes return True else False
+            
+
+    def add_student(self,name):
+        student = Student(name=name)
+        session.add(student)
+        session.commit()
+        print(f"Student '{name}' added.")
+        
+    def add_course(self,name):
+        course = Course(name=name)
+        session.add(course)
+        session.commit()
+        print(f"Course '{name}' added.")  
+
+    def add_grade(course_id, student_id, score):
+        grade = Grade(course_id=course_id, student_id=student_id, score=score)
+        session.add(grade)
+        session.commit()
+        print(f"Grade added for Course ID: {course_id}, Student ID: {student_id}, Score: {score}.")
+
+
     
-    def search_student_records(self):
-        student_record =session.query(Student).filter(Student.name==self.user_name)
-        grade_info = (session.query(Grade).filter(Grade.student_name==self.user_name))
-        for info in student_record:
-            self.roll_number = info.id
-        print(f'Name: {self.user_name}')
-        print(f'Roll Number: {self.roll_number}')
-        # print([(grade.student.id,  grade.score,grade.course_name ) for grade in grade_info])
-        
-        
-   
 
     
 if __name__=='__main__':
