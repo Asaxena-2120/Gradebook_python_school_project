@@ -1,0 +1,103 @@
+1. Create a new student:
+student = Student(name='John Doe')
+session.add(student)
+session.commit()
+
+2. Create a new course:
+course = Course(name='Mathematics')
+session.add(course)
+session.commit()
+
+3. Create a new grade for a student in a course:
+grade = Grade(score=85, student_id=1, course_id=1)  # Assuming student_id 1 and course_id 1
+session.add(grade)
+session.commit()
+
+4. Read all students:
+students = session.query(Student).all()
+
+5. Read all courses:
+courses = session.query(Course).all()
+
+6. Read all grades:
+grades = session.query(Grade).all()
+
+7. Update a student's name:
+student = session.query(Student).filter_by(id=1).first()  # Assuming student_id 1
+student.name = 'Flatiron Student'
+session.commit()
+
+8. Update a course's name:
+course = session.query(Course).filter_by(id=1).first()  # Assuming course_id 1
+course.name = 'Physics'
+session.commit()
+
+9. Update a grade's score:
+grade = session.query(Grade).filter_by(id=1).first()  # Assuming grade_id 1
+grade.score = 90
+session.commit()
+
+10. Delete a student:
+student = session.query(Student).filter_by(id=1).first()  # Assuming student_id 1
+session.delete(student)
+session.commit()
+
+11. Delete a course:
+course = session.query(Course).filter_by(id=1).first()  # Assuming course_id 1
+session.delete(course)
+session.commit()
+
+12. Delete a grade:
+grade = session.query(Grade).filter_by(id=1).first()  # Assuming grade_id 1
+session.delete(grade)
+session.commit()
+
+13. SELECT student with name 'John Doe'
+SQL = > `SELECT * FROM students WHERE name = 'John Doe';`
+SQLALCHEMY => `students = session.query(Student).filter(Student.name == 'John Doe').all()`
+
+14. Get student names in ascending order 
+SQL => SELECT * FROM students ORDER BY name;
+SQLALCHEMY => students = session.query(Student).order_by(Student.name).all()
+
+15. Get student names in ascending order 
+from sqlalchemy import desc
+students = session.query(Student).order_by(desc(Student.name)).all()
+
+16. Get only first three students
+SQL => SELECT * FROM students LIMIT 10;
+SQLALCHEMY => students = session.query(Student).limit(10).all()
+
+17. UPDATE name of student with id = x to Flatiron Student2
+SQL => UPDATE students SET name = 'Jane Smith' WHERE id = 1;
+SQLALCHEMY => session.query(Student).filter(Student.id == 1).update({"name": "Jane Smith"})
+session.commit()
+
+18. Count total number of students
+query =  query = session.query(func.count(Course.id)).scalar()
+3
+
+19. get the total score from grade table
+query = session.query(func.sum(Grade.score)).scalar()
+[(457,)] => scalr gives us 457
+
+20. get the total score from grade table
+query = session.query(func.avg(Grade.score)).scalar()
+[(457,)] => scalr gives us 457
+
+21. student names John Doe
+students = session.query(Student).filter(Student.name=='John Doe').all()
+students = session.query(Student).filter_by(name='John Doe').all()
+
+
+
+
+2. 
+SELECT students.* FROM students
+JOIN grades ON students.id = grades.student_id
+JOIN courses ON grades.course_id = courses.id
+WHERE courses.name = 'Mathematics';
+- mathematics_grades = session.query(Grade).filter(Grade.course.has(name='Mathematics')).all()
+query = session.query(Student).join(Grade).join(Course).filter(Course.name == 'Mathematics')
+students = query.all()
+
