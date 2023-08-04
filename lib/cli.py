@@ -1,4 +1,5 @@
 from sqlalchemy import create_engine
+from sqlalchemy import and_ 
 from sqlalchemy.orm import sessionmaker
 from models import Student, Grade, Course
 from tabulate import tabulate
@@ -11,11 +12,15 @@ class CLI:
 
     def display_menu(self):
         print()
+        print("------------------------------------")
         print("1. Add Course")
         print("2. Add Student")
         print("3. Add Grade")
-        print("4. View information for a student enter the student's information: ")
+        print("4. View information for a particular student: ")
+        print("5. View all courses")
+        print("6. View all students")
         print("0. Exit")
+        print("------------------------------------")
         print()
     
     def __init__(self):
@@ -46,9 +51,30 @@ class CLI:
             score = int(input("Enter the score: "))
             self.add_grade(course_id, student_id, score)
         elif choice == '4':
-            name = (input("Enter the name of the student: "))
-            student_id = int(input("Enter the student ID: "))
-            self.view_student(name, student_id)
+            while True:
+                name = (input("Enter the name of the full name (e.g; John Doe) student: "))
+                student_id = (input("Enter the student ID: "))
+                if student_id.isdigit():
+                    choice = self.view_student(name, int(student_id))
+                else:   
+                    print("Student ID should be an interger.")
+                    print()
+                    continue
+                
+                if choice == 0:
+                    break
+
+        elif choice == '5':
+            # View all courses
+            print()
+            for course in self.courses:
+                print(course.name)
+            
+        elif choice == '6':
+            # View all students
+            for student in self.students:
+                print(f'{student.id}. {student.name}')
+                    
         elif choice == '0':
             print("Exiting the CLI.")
             return False
@@ -59,7 +85,7 @@ class CLI:
     def menu_for_teachers(self):
         while True:
             self.display_menu()
-            choice = input("Enter your choice (0-3): ")
+            choice = input("Enter your choice (0-6): ")
             if not self.process_choice_for_teachers(choice):
                 break
 
@@ -88,24 +114,89 @@ class CLI:
             print()
             quit()
 
+    def display_menu_for_student(self,student):
+        print()
+        print(f'1. Show all the courses for {student.name} is enrolled in ')
+        print(f'2. Show all the grades for {student.name} ')
+        print(f'3. Show all the statistics for {student.name} ')
+        print(f'4. Update score for {student.name} ')
+        print(f"5. What to check other student's record? ")
+        print(f'0. Return to main menu\n')
 
     def view_student(self,name,id):
+        
+        # Instructor can have five incorrect attempts
+        
         # check if name and id matches for student, if yes return True else False
-            
+        student = session.query(Student).filter(and_(Student.id==id,Student.name==name.title())).first()
+        
+        if student==None:
+            print("You have entered wrong name or id, please try again!!")
+            print()
+            return
+
+        # handle error if student info is wrong
+        print()
+        print(f'What information do you want to see for \033[1m{student.name}\033[0m today?"')
+        while True:
+            self.display_menu_for_student(student)
+            choice = int(input("Enter your choice: ")) 
+            if choice ==1:
+                # display all courses names for the student
+                print([grade.course.name for grade in session.query(Grade).filter(Grade.student==student).all()])
+            elif choice == 2:
+                # Display all the grades for the student
+                ([print(f'{grade.course.name}: {grade.score}') for grade in session.query(Grade).filter(Grade.student==student).all()])
+            elif choice == 3:
+                # Show all the statistics for the student
+                pass
+            elif choice == 4:
+                # Update score for the student
+                print()
+                course_name= input("Enter the course name for which grade has to be updated: ")
+                course_id = session.query(Course).filter(Course.name==course_name).first().id
+                updated_score = input("New score: ")
+                # get initial grade
+                grade = session.query(Grade).filter(Grade.course_id==course_id, Grade.student==student).first()
+
+                # Are you sure you want to update?
+                grade.score = updated_score
+                confirm = input("Are you sure you want to update? (Y/N)")
+                if confirm.lower()=='y':
+                    session.commit()
+                    print(f"Score has been updated for {course_name} to {updated_score} ")
+                else:
+                    print("Returning to main menu!")
+                    print()
+                    return 0
+                
+            if choice ==5 or choice == 0:
+                return choice
+                
+                
 
     def add_student(self,name):
-        student = Student(name=name)
+        student = Student(name=name.title())
         session.add(student)
         session.commit()
         print(f"Student '{name}' added.")
         
     def add_course(self,name):
-        course = Course(name=name)
-        session.add(course)
-        session.commit()
-        print(f"Course '{name}' added.")  
+        # Check if course is already there in Courses table, if Yes do not add a new course
+        course = session.query(Course).filter(Course.name==name)
+        if not course:
+            course = Course(name=name)
+            session.add(course)
+            session.commit()
+            print(f"Course '{name}' added.")  
+        else:
+            print("ATTENTION: The course already exists in the database. ")
+        return
 
     def add_grade(course_id, student_id, score):
+        # check if student exists
+        # check if course exists
+        # check if grade is valid integer (0-100)
         grade = Grade(course_id=course_id, student_id=student_id, score=score)
         session.add(grade)
         session.commit()
